@@ -103,8 +103,8 @@ int main(int argc, char* argv[])
             }
 
             // Make screen white, clearing.
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
             SDL_RenderClear(renderer);
+            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
 
             // Display the selected visuals for this tick.
             SDL_RenderPresent(renderer);

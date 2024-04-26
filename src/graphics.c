@@ -4,7 +4,7 @@
 
 #include "error.h"
 
-int graphicsInit(SDL_Window* selectWindow, SDL_Renderer* selectRenderer, int* screenWidth, int* screenHeight)
+int graphicsInit(SDL_Window* selectWindow, SDL_Renderer* selectRenderer, const int* screenWidth, const int* screenHeight)
 {
     // Initialise SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0)
