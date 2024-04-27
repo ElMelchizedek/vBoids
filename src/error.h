@@ -8,6 +8,7 @@
 #define E_SDL_WINDOW_CREATE 3
 #define E_SDL_RENDERER_CREATE 4
 #define E_REALLOC 5
+#define E_NULL 6
 
 int errorHandle(int error, ...);
 

@@ -3,6 +3,7 @@
 
 #include "error.h"
 
+// Handles errors, obviously.
 int errorHandle(int error, ...)
 {
     va_list args;
@@ -29,6 +30,8 @@ int errorHandle(int error, ...)
         case (E_REALLOC):
             message = "Failed to reallocate memory for variable: %s\n";
             break;
+        case (E_NULL):
+            message = "Failed to access element of array %s\n";
     }
 
     va_start(args, error);

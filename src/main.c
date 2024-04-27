@@ -64,24 +64,27 @@ int main(int argc, char* argv[])
     int addressListCount = 0;
 
     // Entity list: List of every graphically interacting entity, used for rendering.
-    entity** entityList = (entity**)malloc(BOIDS_AMOUNT * sizeof(entity*));
-    if (entityList == NULL)
+    boid** boidList = (boid**)malloc(BOIDS_AMOUNT * sizeof(boid*));
+    if (boidList == NULL)
     {
-        errorHandle(E_MEM, "entityList");
+        errorHandle(E_MEM, "boidList");
     }
 
-    // Initialise the entity list with dummy values to prevent memory issues.
+    // Initialise the boid list with dummy values to prevent memory issues.
     for (int i = 0; i < BOIDS_AMOUNT; i++)
     {
-        entityList[i] = malloc(sizeof(entity));
-        entityList[i]->thing = NULL;
-        entityList[i]->form = F_NULL;
-        entityList[i]->x = 0;
-        entityList[i]->y = 0;
-        entityList[i]->w = 0;
-        entityList[i]->h = 0;
+        boidList[i] = malloc(sizeof(boid));
+        boidList[i]->x              = 0;
+        boidList[i]->y              = 0;
+        boidList[i]->velocity       = 0.0;
+        boidList[i]->direction      = 0.0;
+        boidList[i]->bubble         = 0.0;
+        boidList[i]->avoid          = false;
     }
-    saveAddress(&addressList, &addressListCount, (void*)entityList);
+    saveAddress(&addressList, &addressListCount, (void*)boidList);
+
+    // Variables required for simulation, that will be passed to functions in game.c
+    int flockCentre[2] = {0, 0};
 
     // Event to be handled by loop
     SDL_Event e;
@@ -108,7 +111,7 @@ int main(int argc, char* argv[])
 
             // Display the selected visuals for this tick.
             SDL_RenderPresent(renderer);
-            // Delay to prevent GPU Overlod
+            // Delay to prevent GPU overlod
             // NOTE: Replace this with proper implementation that Ada told me to do
             SDL_Delay(17);
         }
