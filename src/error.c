@@ -39,3 +39,4 @@ int errorHandle(int error, ...)
     va_end(args);
     return 0;
 }
+// error.c

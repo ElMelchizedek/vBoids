@@ -49,14 +49,14 @@ int main(int argc, char* argv[])
     bool quit = false;
 
     // Initialise graphics
-    if (graphicsInit(window, renderer, &SCREEN_WIDTH, &SCREEN_HEIGHT))
+    if (graphicsInit(&window, &renderer, &SCREEN_WIDTH, &SCREEN_HEIGHT))
     {
         errorHandle(E_GRAPHICS_INIT);
     }
 
     // Address list: Array of pointers to every variable with dynamically allocated memory,
     // so their memory can be freed on quit in an orderly manner.
-    void **addressList = (void**)malloc(sizeof(void*));
+    void** addressList = (void**)malloc(sizeof(void*));
     if (addressList == NULL)
     {
         errorHandle(E_MEM, "addressList");
@@ -79,10 +79,12 @@ int main(int argc, char* argv[])
         boidList[i]->velocity       = 0;
         boidList[i]->directionX     = 0;
         boidList[i]->directionY     = 0;
+        boidList[i]->acceleration   = 0;
         boidList[i]->bubble         = 0;
         boidList[i]->avoid          = false;
         boidList[i]->view           = 0.0;
     }
+    initialiseBoidList(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
     saveAddress(&addressList, &addressListCount, (void*)boidList);
 
     // Variables required for simulation, that will be passed to functions in game.c
@@ -105,20 +107,25 @@ int main(int argc, char* argv[])
                 }
                 quit = true;
             }
-
-            // Make screen white, clearing.
-            SDL_RenderClear(renderer);
-            SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
-
-            // Display the selected visuals for this tick.
-            SDL_RenderPresent(renderer);
-            // Delay to prevent GPU overlod
-            // NOTE: Replace this with proper implementation that Ada told me to do
-            SDL_Delay(17);
         }
+        // Make screen white, clearing.
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_RenderClear(renderer);
+        calculate(boidList, &BOIDS_AMOUNT);
+        simulate(boidList, &BOIDS_AMOUNT);
+        // Display the selected visuals for this tick.
+        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0x00, 0xFF);
+        for (int i = 0; i < BOIDS_AMOUNT; i++)
+        {
+            SDL_RenderDrawPoint(renderer, boidList[i]->x, boidList[i]->y);
+        }
+        SDL_RenderPresent(renderer);
+        // Delay to prevent GPU overlod
+        // NOTE: Replace this with proper implementation that Ada told me to do
+        SDL_Delay(17);
     }
-
     // Exit programme since quit has been activated
     end(window, renderer);
     return 0;
 }
+// main.c

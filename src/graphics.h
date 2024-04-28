@@ -3,6 +3,7 @@
 
 #include <SDL2/SDL.h>
 
-int graphicsInit(SDL_Window* selectWindow, SDL_Renderer* selectRenderer, const int* screenWidth, const int* screenHeight);
+int graphicsInit(SDL_Window** selectWindow, SDL_Renderer** selectRenderer, const int* screenWidth, const int* screenHeight);
 
-#endif // GRAPHICS_H
+#endif 
+// graphics.h
