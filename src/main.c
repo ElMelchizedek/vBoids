@@ -76,15 +76,16 @@ int main(int argc, char* argv[])
         boidList[i] = malloc(sizeof(boid));
         boidList[i]->x              = 0;
         boidList[i]->y              = 0;
-        boidList[i]->velocity       = 0.0;
-        boidList[i]->direction      = 0.0;
-        boidList[i]->bubble         = 0.0;
+        boidList[i]->velocity       = 0;
+        boidList[i]->directionX     = 0;
+        boidList[i]->directionY     = 0;
+        boidList[i]->bubble         = 0;
         boidList[i]->avoid          = false;
+        boidList[i]->view           = 0.0;
     }
     saveAddress(&addressList, &addressListCount, (void*)boidList);
 
     // Variables required for simulation, that will be passed to functions in game.c
-    int flockCentre[2] = {0, 0};
 
     // Event to be handled by loop
     SDL_Event e;
