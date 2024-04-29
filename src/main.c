@@ -108,11 +108,11 @@ int main(int argc, char* argv[])
             }
         }
         // Make screen white, clearing.
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
+        SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
         SDL_RenderClear(renderer);
         // Simulate for a tick
         calculate(boidList, &BOIDS_AMOUNT);
-        simulate(boidList, &BOIDS_AMOUNT);
+        simulate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
         // Create this tick's boidChoord
         int** boidCoords = (int**)malloc(BOIDS_AMOUNT * sizeof(int*)); 
         for (int i = 0; i < BOIDS_AMOUNT; i++)
@@ -130,7 +130,8 @@ int main(int argc, char* argv[])
         SDL_RenderPresent(renderer);
         // Delay to prevent GPU overlod
         // NOTE: Replace this with proper implementation that Ada told me to do
-        SDL_Delay(1000);
+        // SDL_Delay(1000);
+        SDL_Delay(100);
     }
     // Exit programme since quit has been activated
     end(window, renderer);

@@ -18,24 +18,24 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount
     int generateYUpperLimit = ((*screenHeight / 2) + (*screenHeight / 10));
     int generateXLowerLimit = ((*screenWidth / 2) - (*screenWidth / 10));
     int generateYLowerLimit = ((*screenHeight / 2) - (*screenHeight / 10));
+    srand(time(0));
 
     for (int i = 0; i < *boidsAmount; i++) 
     {
         boid* newBoid = (boid*)malloc(sizeof(boid));
-        srand(time(0));
 
         newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
         newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
 
         newBoid->velocity = (int*)malloc(2 * sizeof(int));
-        newBoid->velocity[0] = (rand() % (10 - 1 + 1) + 1);
-        newBoid->velocity[1] = (rand() % (10 - 1 + 1) + 1);
+        newBoid->velocity[0] = (rand() % (20 - 10 + 1) + 10);
+        newBoid->velocity[1] = (rand() % (20 - 10 + 1) + 10);
         
         newBoid->speed = 1;
 
-        newBoid->bubble = 10;
+        newBoid->bubble = 30;
         newBoid->avoid = false;
-        newBoid->view = 90;
+        newBoid->view = 90 * (M_PI / 180); 
 
         boidList[*boidsCount] = newBoid;
         *boidsCount = *boidsCount + 1;
@@ -98,8 +98,10 @@ double determineAngleNearbyBoids(boid* currentBoid, boid** boidsList, const int*
 int* determineVelocity(boid* currentBoid, double* angle)
 {
     int* newVelocity = (int*)malloc(2 * sizeof(int));
-    newVelocity[0] = (currentBoid->speed * cos(*angle));
-    newVelocity[1] = (currentBoid->speed * sin(*angle));
+    double newVelX = (currentBoid->speed * cos(*angle));
+    double newVelY = (currentBoid->speed * sin(*angle));
+    newVelocity[0] = (int)lround(newVelX); 
+    newVelocity[1] = (int)lround(newVelY); 
     return newVelocity;
 }
 
@@ -124,20 +126,26 @@ void calculate(boid** boidsList, const int* boidsAmount)
         angle = determineAngleNearbyBoids(boidsList[i], boidsList, boidsAmount, currentBoidIndex);
         // Calculate speed
         boidsList[i]->speed = determineSpeed(boidsList[i]->speed, boidsList[i]->avoid);
-        // Calculate velocity 
-        boidsList[i]->velocity = determineVelocity(boidsList[i], &angle);
+        // Calculate velocity if recieved new angle
+        printf("%d %d\n", boidsList[i]->velocity[0], boidsList[i]->velocity[1]);
+        if (!isnan(angle))
+        {
+            boidsList[i]->velocity = determineVelocity(boidsList[i], &angle);
+        }
     }
     return;
 }
 
 // Using the data updated via calculate(), simulate the environment for one tick based on the specified rules.
-void simulate(boid** boidsList, const int* boidsAmount)
+void simulate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight)
 {
     for (int i = 0; i < *boidsAmount; i++)
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList"); };
         boid* currentBoid = boidsList[i];
-        currentBoid->x = (currentBoid->x + currentBoid->velocity[0]);
-        currentBoid->y = (currentBoid->y + currentBoid->velocity[1]);
+        int newX = (currentBoid->x + currentBoid->velocity[0]);
+        int newY = (currentBoid->y + currentBoid->velocity[1]);
+        if (newX <= *screenWidth) { currentBoid->x = (currentBoid->x + currentBoid->velocity[0]); }
+        if (newY <= *screenHeight) { currentBoid->y = (currentBoid->y + currentBoid->velocity[1]); }
     }
 }

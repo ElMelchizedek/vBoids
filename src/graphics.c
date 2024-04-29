@@ -6,7 +6,7 @@
 
 void drawBoids(int** boidCoords, const int* boidsAmount, SDL_Window* window, SDL_Renderer* renderer)
 {
-    SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
+    SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
     for (int i = 0; i < *boidsAmount; i++)
     {
         SDL_RenderDrawPoint(renderer, boidCoords[i][0], boidCoords[i][1]);

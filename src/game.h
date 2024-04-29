@@ -4,17 +4,6 @@
 #include <stdbool.h>
 
 // CUSTOM TYPES
-// Basic Entity: Use is required for any graphical or graphical-interacting variable to be manipulated in the game world.
-// typedef struct entity
-// {
-//     void *thing;
-//     int form;
-//     int x;
-//     int y;
-//     int w;
-//     int h;
-// } entity;
-
 // Boid: The simulated computer bird, rendered using SDL_RenderDrawPoint()
 typedef struct boid
 {
@@ -33,7 +22,7 @@ typedef struct boid
 #define F_NULL 0
 
 // FUNCTIONS
-void simulate(boid** boidsList, const int* boidsAmount);
+void simulate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
 void calculate(boid** boidsList, const int* boidsAmount);
 void initialiseBoidList(boid** boidsList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
 
