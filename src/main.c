@@ -73,21 +73,19 @@ int main(int argc, char* argv[])
     // Initialise the boid list with dummy values to prevent memory issues.
     for (int i = 0; i < BOIDS_AMOUNT; i++)
     {
-        boidList[i] = malloc(sizeof(boid));
-        boidList[i]->x              = 0;
-        boidList[i]->y              = 0;
-        boidList[i]->velocity       = 0;
-        boidList[i]->directionX     = 0;
-        boidList[i]->directionY     = 0;
-        boidList[i]->acceleration   = 0;
-        boidList[i]->bubble         = 0;
-        boidList[i]->avoid          = false;
-        boidList[i]->view           = 0.0;
+        boidList[i]                     = malloc(sizeof(boid));
+        boidList[i]->x                  = 0;
+        boidList[i]->y                  = 0;
+        boidList[i]->velocity           = (int*)malloc(2 * sizeof(int));
+        boidList[i]->speed              = 0;
+        boidList[i]->bubble             = 0;
+        boidList[i]->avoid              = false;
+        boidList[i]->view               = 0.0;
     }
     initialiseBoidList(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
     saveAddress(&addressList, &addressListCount, (void*)boidList);
 
-    // Variables required for simulation, that will be passed to functions in game.c
+    // Variables required for simulation, that will be passed to functions in game.c/graphics.c
 
     // Event to be handled by loop
     SDL_Event e;
@@ -111,18 +109,27 @@ int main(int argc, char* argv[])
         // Make screen white, clearing.
         SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0xFF, 0xFF);
         SDL_RenderClear(renderer);
+        // Simulate for a tick
         calculate(boidList, &BOIDS_AMOUNT);
         simulate(boidList, &BOIDS_AMOUNT);
-        // Display the selected visuals for this tick.
-        SDL_SetRenderDrawColor(renderer, 0xFF, 0xFF, 0x00, 0xFF);
+        // Create this tick's boidChoord
+        int** boidCoords = (int**)malloc(BOIDS_AMOUNT * sizeof(int*)); 
         for (int i = 0; i < BOIDS_AMOUNT; i++)
         {
-            SDL_RenderDrawPoint(renderer, boidList[i]->x, boidList[i]->y);
+            boidCoords[i] = (int*)malloc(2 * sizeof(int));
         }
+        // Collect the coordinates of each boid int boidChoords and then send them to drawBoids()
+        for (int i = 0; i < BOIDS_AMOUNT; i++)
+        {
+            boidCoords[i][0] = boidList[i]->x;
+            boidCoords[i][1] = boidList[i]->y;   
+        }
+        // Draw the boids
+        drawBoids(boidCoords, &BOIDS_AMOUNT, window, renderer);
         SDL_RenderPresent(renderer);
         // Delay to prevent GPU overlod
         // NOTE: Replace this with proper implementation that Ada told me to do
-        SDL_Delay(17);
+        SDL_Delay(1000);
     }
     // Exit programme since quit has been activated
     end(window, renderer);

@@ -21,88 +21,72 @@ int determineMagnitude(int x, int y)
 // If the closest boid is closer than the boid's bubble variable will allow, return true, else false.
 bool determineAvoid(boid* currentBoid, boid** boidsList, const int* boidsAmount)
 {
-    //boid closestBoid = {0, 0, 0, 0, 0, 0, 0, false, 0.0};
-    float closestDistance = 0.0;
+    int closestDistance = 0;
     for (int j = 0; j < *boidsAmount; j++)
     {
         if (boidsList[j] == NULL) { errorHandle(E_NULL, "boidsList"); };
         boid* compareBoid = boidsList[j];
-        int distance = determineMagnitude((currentBoid->x - compareBoid->x), (currentBoid->y - compareBoid->y));        
-        if ((distance < closestDistance) && distance)
-        {
-            closestDistance = distance;
-        }
+        int distance = determineMagnitude((compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y));
+        if (distance < closestDistance) { closestDistance = distance; }
     }
     // If the closest boid is closer than the current boid's bubble will allow, make it avoid the flock.
     if (closestDistance > currentBoid->bubble)
     { return true; } else { return false; }
 }
 
-// Calculate the average position of all boids within the 
-// selected boid's visual range, for use in orientating the birds (either towards to, or away from).
-int* averagePositionNearbyBoids(boid* currentBoid, boid** boidsList, const int* boidsAmount)
+// Figures out what the angle to the averge position of the nearby boids within the selected boid's visual range is.
+double determineAngleNearbyBoids(boid* currentBoid, boid** boidsList, const int* boidsAmount)
 {
-    int* averagePosition = (int*)malloc(2 * sizeof(int)); 
+    double angle = 0.0;
 
     for (int i = 0; i < *boidsAmount; i++)
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList");};
         boid* compareBoid = boidsList[i];
-        int dotProduct = ((currentBoid->x * compareBoid->x) + (currentBoid->y * compareBoid->y));
-        int currentBoidMagnitude = determineMagnitude(currentBoid->x, currentBoid->y);
-        int compareBoidMagnitude = determineMagnitude(compareBoid->x, compareBoid->y);
-        float angleBetweenRaw = cacos((dotProduct) / (currentBoidMagnitude * compareBoidMagnitude));
-        float angleBetween = (angleBetweenRaw * (180 / M_PI));
-
-        if (currentBoid->view <= angleBetween && angleBetween <= 360)
+        int pointVector[2] = {(compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y)};
+        int dotProduct = ((currentBoid->velocity[0] * pointVector[0]) + (currentBoid->velocity[1] * pointVector[1]));
+        int velocityMagnitude = determineMagnitude(currentBoid->velocity[0], currentBoid->velocity[1]);
+        int pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
+        double newAngle = acos(dotProduct / (velocityMagnitude * pointMagnitude));
+        if (angle <= (currentBoid->view / 2) && angle >= ((currentBoid->view / 2) * -1))
         {
-            averagePosition[0] = ((compareBoid->x + averagePosition[0]) / 2);
-            averagePosition[1] = ((compareBoid->y + averagePosition[1]) / 2);
-        } 
+            angle = ((angle + newAngle) / 2); 
+        }
     }
-
-    return averagePosition; 
+    return angle; 
 }
 
-// Uses special vector maths provided by Ada that first generates a vector whose magnitude is in comparison to the average position of the visible nearby boids,
-// affecting the specified boid's velocity down the line.
-int determineAcceleration(boid* currentBoid, int* averagePosition, bool avoid)
+int* determineVelocity(boid* currentBoid, double* angle)
 {
-    int vectorBetween[2] = {(averagePosition[0] - currentBoid->x), (averagePosition[1] - currentBoid->y)};
-    int vectorBetweenLength = determineMagnitude(vectorBetween[0], vectorBetween[1]);
-    int unitVector[2] = {(vectorBetween[0] / vectorBetweenLength), (vectorBetween[1] / vectorBetweenLength)};
-    int accelerateVector[2] = {(unitVector[0] / vectorBetweenLength), (unitVector[1] / vectorBetweenLength)};
-    int accelerateVectorMagnitude = determineMagnitude(accelerateVector[0], accelerateVector[1]);
-    
-    if (avoid)
-    {
-        accelerateVectorMagnitude = (-accelerateVectorMagnitude);
-    }
-    return accelerateVectorMagnitude;
+    int* newVelocity = (int*)malloc(2 * sizeof(int));
+    newVelocity[0] = (currentBoid->speed * cos(*angle));
+    newVelocity[1] = (currentBoid->speed * sin(*angle));
+    return newVelocity;
+}
+
+int determineSpeed(int currentSpeed, bool avoid)
+{  
+    int newSpeed = 0;
+    if (avoid) { newSpeed = currentSpeed * -2; } else { newSpeed = currentSpeed * 2; }
+    return newSpeed;
 }
 
 // Does calculations based on previous tick (or at beginning, based on initialisation).
 void calculate(boid** boidsList, const int* boidsAmount)
-{ for (int i = 0; i < *boidsAmount; i++)
+{ 
+    for (int i = 0; i < *boidsAmount; i++)
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList"); };
         boid* currentBoid = boidsList[i];
-
         // Calculate based on nearby boids whether selected boid should avoid the flock or follow it.        
         currentBoid->avoid = determineAvoid(currentBoid, boidsList, boidsAmount);
-
-        // Get average position of nearby boids to determine orientation of selected boid.
-        int* boidFocusPosition = (int*)malloc(2 * sizeof(int));
-        boidFocusPosition = averagePositionNearbyBoids(currentBoid, boidsList, boidsAmount);
-        currentBoid->directionX = boidFocusPosition[0];
-        currentBoid->directionY = boidFocusPosition[1];
-
-        // Determine the acceleration using the ascertained direction vectors.
-        currentBoid->acceleration = determineAcceleration(currentBoid, boidFocusPosition, currentBoid->avoid);
-        // Then calculate velocity based on the acceleration, basic physics.
-        currentBoid->velocity = (currentBoid->velocity * currentBoid->acceleration);
+        // Get angle to nearby boids in visual range, for calculating new velocity.
+        double angle = determineAngleNearbyBoids(currentBoid, boidsList, boidsAmount);
+        // Calculate speed
+        currentBoid->speed = determineSpeed(currentBoid->speed, currentBoid->avoid);
+        // Calculate velocity 
+        currentBoid->velocity = determineVelocity(currentBoid, &angle);
     }
-
     return;
 }
 
@@ -113,11 +97,10 @@ void simulate(boid** boidsList, const int* boidsAmount)
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList"); };
         boid* currentBoid = boidsList[i];
-        currentBoid->x = (currentBoid->directionX * currentBoid->velocity);
-        currentBoid->y = (currentBoid->directionY * currentBoid->velocity);
+        currentBoid->x = (currentBoid->x + currentBoid->velocity[0]);
+        currentBoid->y = (currentBoid->y + currentBoid->velocity[1]);
     }
 }
-// game.c
 
 void initialiseBoidList(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight)
 {
@@ -135,12 +118,13 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, const int* scre
         currentBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
         currentBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
 
-        currentBoid->velocity = (rand() % (10 - 0 + 1) + 0);
-        currentBoid->directionX = (rand() % (20 - 10 + 1) + 10);
-        currentBoid->directionY = (rand() % (20 - 10 + 1) + 10);
-        currentBoid->acceleration = 10;
-        currentBoid->bubble = 100;
+        currentBoid->velocity[0] = (rand() % (10 - 1 + 1) + 1);
+        currentBoid->velocity[1] = (rand() % (10 - 1 + 1) + 1);
+        
+        currentBoid->speed = 1;
+
+        currentBoid->bubble = 10;
         currentBoid->avoid = false;
-        currentBoid->view = 300;
+        currentBoid->view = 90;
     }
 }

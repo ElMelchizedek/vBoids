@@ -18,10 +18,8 @@ typedef struct boid
 {
     int x;
     int y;
-    int velocity;
-    int directionX;
-    int directionY;
-    int acceleration;
+    int* velocity;
+    int speed;
     int bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
     bool avoid; // If set to true, the boid will direct itself opposite of the flock's centre, rather than towards it.
     float view; // The boid's visible range, in degrees.
