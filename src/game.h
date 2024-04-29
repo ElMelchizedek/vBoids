@@ -1,6 +1,8 @@
 #ifndef GAME_H
 #define GAME_H
 
+#include <stdbool.h>
+
 // CUSTOM TYPES
 // Basic Entity: Use is required for any graphical or graphical-interacting variable to be manipulated in the game world.
 // typedef struct entity
@@ -33,7 +35,7 @@ typedef struct boid
 // FUNCTIONS
 void simulate(boid** boidsList, const int* boidsAmount);
 void calculate(boid** boidsList, const int* boidsAmount);
-void initialiseBoidList(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
+void initialiseBoidList(boid** boidsList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
 
 
 #endif 

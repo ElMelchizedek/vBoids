@@ -76,13 +76,14 @@ int main(int argc, char* argv[])
         boidList[i]                     = malloc(sizeof(boid));
         boidList[i]->x                  = 0;
         boidList[i]->y                  = 0;
-        boidList[i]->velocity           = (int*)malloc(2 * sizeof(int));
+        boidList[i]->velocity           = NULL;
         boidList[i]->speed              = 0;
         boidList[i]->bubble             = 0;
         boidList[i]->avoid              = false;
         boidList[i]->view               = 0.0;
     }
-    initialiseBoidList(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+    int boidsCount = 0;
+    initialiseBoidList(boidList, &BOIDS_AMOUNT, &boidsCount, &SCREEN_WIDTH, &SCREEN_HEIGHT);
     saveAddress(&addressList, &addressListCount, (void*)boidList);
 
     // Variables required for simulation, that will be passed to functions in game.c/graphics.c

@@ -12,6 +12,37 @@
 #include "game.h"
 #include "error.h"
 
+void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight)
+{
+    int generateXUpperLimit = ((*screenWidth / 2) + (*screenWidth / 10));
+    int generateYUpperLimit = ((*screenHeight / 2) + (*screenHeight / 10));
+    int generateXLowerLimit = ((*screenWidth / 2) - (*screenWidth / 10));
+    int generateYLowerLimit = ((*screenHeight / 2) - (*screenHeight / 10));
+
+    for (int i = 0; i < *boidsAmount; i++) 
+    {
+        boid* newBoid = (boid*)malloc(sizeof(boid));
+        srand(time(0));
+
+        newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
+        newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
+
+        newBoid->velocity = (int*)malloc(2 * sizeof(int));
+        newBoid->velocity[0] = (rand() % (10 - 1 + 1) + 1);
+        newBoid->velocity[1] = (rand() % (10 - 1 + 1) + 1);
+        
+        newBoid->speed = 1;
+
+        newBoid->bubble = 10;
+        newBoid->avoid = false;
+        newBoid->view = 90;
+
+        boidList[*boidsCount] = newBoid;
+        *boidsCount = *boidsCount + 1;
+    }
+    return;
+}
+
 int determineMagnitude(int x, int y)
 {
     return sqrt(pow(x, 2) + pow(y, 2));
@@ -19,15 +50,18 @@ int determineMagnitude(int x, int y)
 
 // Find the distance between the current boid in the loop, and the closest one to it.
 // If the closest boid is closer than the boid's bubble variable will allow, return true, else false.
-bool determineAvoid(boid* currentBoid, boid** boidsList, const int* boidsAmount)
+bool determineAvoid(boid* currentBoid, boid** boidsList, const int* boidsAmount, int currentBoidIndex)
 {
     int closestDistance = 0;
     for (int j = 0; j < *boidsAmount; j++)
     {
         if (boidsList[j] == NULL) { errorHandle(E_NULL, "boidsList"); };
         boid* compareBoid = boidsList[j];
-        int distance = determineMagnitude((compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y));
-        if (distance < closestDistance) { closestDistance = distance; }
+        if (j != currentBoidIndex)
+        {
+            int distance = determineMagnitude((compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y));
+            if (distance < closestDistance) { closestDistance = distance; }
+        }
     }
     // If the closest boid is closer than the current boid's bubble will allow, make it avoid the flock.
     if (closestDistance > currentBoid->bubble)
@@ -35,7 +69,7 @@ bool determineAvoid(boid* currentBoid, boid** boidsList, const int* boidsAmount)
 }
 
 // Figures out what the angle to the averge position of the nearby boids within the selected boid's visual range is.
-double determineAngleNearbyBoids(boid* currentBoid, boid** boidsList, const int* boidsAmount)
+double determineAngleNearbyBoids(boid* currentBoid, boid** boidsList, const int* boidsAmount, int currentBoidIndex)
 {
     double angle = 0.0;
 
@@ -43,14 +77,19 @@ double determineAngleNearbyBoids(boid* currentBoid, boid** boidsList, const int*
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList");};
         boid* compareBoid = boidsList[i];
-        int pointVector[2] = {(compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y)};
-        int dotProduct = ((currentBoid->velocity[0] * pointVector[0]) + (currentBoid->velocity[1] * pointVector[1]));
-        int velocityMagnitude = determineMagnitude(currentBoid->velocity[0], currentBoid->velocity[1]);
-        int pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
-        double newAngle = acos(dotProduct / (velocityMagnitude * pointMagnitude));
-        if (angle <= (currentBoid->view / 2) && angle >= ((currentBoid->view / 2) * -1))
+        if (i != currentBoidIndex)
         {
-            angle = ((angle + newAngle) / 2); 
+            double newAngle = 0.0;
+            double pointVector[2] = {(compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y)};
+            double dotProduct = ((currentBoid->velocity[0] * pointVector[0]) + (currentBoid->velocity[1] * pointVector[1]));
+            double velocityMagnitude = determineMagnitude(currentBoid->velocity[0], currentBoid->velocity[1]);
+            double pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
+            double acosData = (double)(dotProduct / (velocityMagnitude * pointMagnitude));
+            newAngle = acos(acosData);
+            if (angle <= (currentBoid->view / 2) && angle >= ((currentBoid->view / 2) * -1))
+            {
+                angle = ((angle + newAngle) / 2); 
+            }
         }
     }
     return angle; 
@@ -77,15 +116,16 @@ void calculate(boid** boidsList, const int* boidsAmount)
     for (int i = 0; i < *boidsAmount; i++)
     {
         if (boidsList[i] == NULL) { errorHandle(E_NULL, "boidsList"); };
-        boid* currentBoid = boidsList[i];
+        int currentBoidIndex = i;
+        double angle = 0.0;
         // Calculate based on nearby boids whether selected boid should avoid the flock or follow it.        
-        currentBoid->avoid = determineAvoid(currentBoid, boidsList, boidsAmount);
+        boidsList[i]->avoid = determineAvoid(boidsList[i], boidsList, boidsAmount, currentBoidIndex);
         // Get angle to nearby boids in visual range, for calculating new velocity.
-        double angle = determineAngleNearbyBoids(currentBoid, boidsList, boidsAmount);
+        angle = determineAngleNearbyBoids(boidsList[i], boidsList, boidsAmount, currentBoidIndex);
         // Calculate speed
-        currentBoid->speed = determineSpeed(currentBoid->speed, currentBoid->avoid);
+        boidsList[i]->speed = determineSpeed(boidsList[i]->speed, boidsList[i]->avoid);
         // Calculate velocity 
-        currentBoid->velocity = determineVelocity(currentBoid, &angle);
+        boidsList[i]->velocity = determineVelocity(boidsList[i], &angle);
     }
     return;
 }
@@ -99,32 +139,5 @@ void simulate(boid** boidsList, const int* boidsAmount)
         boid* currentBoid = boidsList[i];
         currentBoid->x = (currentBoid->x + currentBoid->velocity[0]);
         currentBoid->y = (currentBoid->y + currentBoid->velocity[1]);
-    }
-}
-
-void initialiseBoidList(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight)
-{
-    int generateXUpperLimit = ((*screenWidth / 2) + (*screenWidth / 10));
-    int generateYUpperLimit = ((*screenHeight / 2) + (*screenHeight / 10));
-    int generateXLowerLimit = ((*screenWidth / 2) - (*screenWidth / 10));
-    int generateYLowerLimit = ((*screenHeight / 2) - (*screenHeight / 10));
-
-    for (int i = 0; i < *boidsAmount; i++) 
-    {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidsList"); };
-        boid* currentBoid = boidList[i];
-        srand(time(0));
-
-        currentBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
-        currentBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
-
-        currentBoid->velocity[0] = (rand() % (10 - 1 + 1) + 1);
-        currentBoid->velocity[1] = (rand() % (10 - 1 + 1) + 1);
-        
-        currentBoid->speed = 1;
-
-        currentBoid->bubble = 10;
-        currentBoid->avoid = false;
-        currentBoid->view = 90;
     }
 }
