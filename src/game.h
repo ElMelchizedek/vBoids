@@ -10,10 +10,13 @@ typedef struct boid
     int x;
     int y;
     int* velocity;
-    int speed;
-    int bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
-    bool avoid; // If set to true, the boid will direct itself opposite of the flock's centre, rather than towards it.
+    float speed;
+    int tickSpeed;
+    float acceleration;
+    float bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
     float view; // The boid's visible range, in degrees.
+    bool avoid;
+    float nearbyBoids;
 } boid;
 
 
@@ -23,7 +26,7 @@ typedef struct boid
 
 // FUNCTIONS
 void simulate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
-void calculate(boid** boidsList, const int* boidsAmount);
+void calculate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
 void initialiseBoidList(boid** boidsList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
 
 

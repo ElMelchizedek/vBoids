@@ -14,6 +14,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int BOIDS_AMOUNT = 100;
+const int FPS = 30;
 
 // Quit, exit programme
 void end(SDL_Window* selectWindow, SDL_Renderer* selectRenderer)
@@ -47,6 +48,7 @@ int main(int argc, char* argv[])
 
     // Other basic variables
     bool quit = false;
+    int lastTicks = SDL_GetTicks();
 
     // Initialise graphics
     if (graphicsInit(&window, &renderer, &SCREEN_WIDTH, &SCREEN_HEIGHT))
@@ -78,9 +80,11 @@ int main(int argc, char* argv[])
         boidList[i]->y                  = 0;
         boidList[i]->velocity           = NULL;
         boidList[i]->speed              = 0;
+        boidList[i]->acceleration       = 0;
         boidList[i]->bubble             = 0;
-        boidList[i]->avoid              = false;
         boidList[i]->view               = 0.0;
+        boidList[i]->avoid              = false;
+        boidList[i]->nearbyBoids        = 0;
     }
     int boidsCount = 0;
     initialiseBoidList(boidList, &BOIDS_AMOUNT, &boidsCount, &SCREEN_WIDTH, &SCREEN_HEIGHT);
@@ -107,11 +111,14 @@ int main(int argc, char* argv[])
                 quit = true;
             }
         }
+        // FPS Cap
+        if ((SDL_GetTicks() - lastTicks) < 1000/FPS) { continue; }
+        lastTicks = SDL_GetTicks();
         // Make screen white, clearing.
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
         SDL_RenderClear(renderer);
         // Simulate for a tick
-        calculate(boidList, &BOIDS_AMOUNT);
+        calculate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
         simulate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
         // Create this tick's boidChoord
         int** boidCoords = (int**)malloc(BOIDS_AMOUNT * sizeof(int*)); 
@@ -128,10 +135,6 @@ int main(int argc, char* argv[])
         // Draw the boids
         drawBoids(boidCoords, &BOIDS_AMOUNT, window, renderer);
         SDL_RenderPresent(renderer);
-        // Delay to prevent GPU overlod
-        // NOTE: Replace this with proper implementation that Ada told me to do
-        // SDL_Delay(1000);
-        SDL_Delay(100);
     }
     // Exit programme since quit has been activated
     end(window, renderer);
