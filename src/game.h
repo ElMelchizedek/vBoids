@@ -10,13 +10,9 @@ typedef struct boid
     int x;
     int y;
     int* velocity;
-    float speed;
-    int tickSpeed;
-    float acceleration;
-    float bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
-    float view; // The boid's visible range, in degrees.
-    bool avoid;
-    float nearbyBoids;
+    int speed;
+    int bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
+    double view; // The boid's visible range, in degrees.
 } boid;
 
 
@@ -25,9 +21,9 @@ typedef struct boid
 #define F_NULL 0
 
 // FUNCTIONS
-void simulate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
-void calculate(boid** boidsList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
-void initialiseBoidList(boid** boidsList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
+void simulate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
+void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
+void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
 
 
 #endif 
