@@ -14,7 +14,7 @@
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 const int BOIDS_AMOUNT = 100;
-const int FPS = 10;
+const int FPS = 120;
 
 // Quit, exit programme
 void end(SDL_Window* selectWindow, SDL_Renderer* selectRenderer)
@@ -72,20 +72,6 @@ int main(int argc, char* argv[])
         errorHandle(E_MEM, "boidList");
     }
 
-    // // Initialise the boid list with dummy values to prevent memory issues.
-    // for (int i = 0; i < BOIDS_AMOUNT; i++)
-    // {
-    //     boidList[i]                     = malloc(sizeof(boid));
-    //     boidList[i]->x                  = 0;
-    //     boidList[i]->y                  = 0;
-    //     boidList[i]->velocity           = NULL;
-    //     boidList[i]->speed              = 0;
-    //     boidList[i]->acceleration       = 0;
-    //     boidList[i]->bubble             = 0;
-    //     boidList[i]->view               = 0.0;
-    //     boidList[i]->avoid              = false;
-    //     boidList[i]->nearbyBoids        = 0;
-    // }
     int boidsCount = 0;
     initialiseBoidList(boidList, &BOIDS_AMOUNT, &boidsCount, &SCREEN_WIDTH, &SCREEN_HEIGHT);
     saveAddress(&addressList, &addressListCount, (void*)boidList);
@@ -112,14 +98,14 @@ int main(int argc, char* argv[])
             }
         }
         // FPS Cap
-        if ((SDL_GetTicks() - lastTicks) < 1000/FPS) { continue; }
+        // if ((SDL_GetTicks() - lastTicks) < 1000/FPS) { continue; }
         lastTicks = SDL_GetTicks();
         // Make screen white, clearing.
         SDL_SetRenderDrawColor(renderer, 0x00, 0x00, 0x00, 0xFF);
         SDL_RenderClear(renderer);
         // Simulate for a tick
-        calculate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
-        simulate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+        int lastSeconds = (int)round((float)lastTicks / 1000);
+        calculate(boidList, &BOIDS_AMOUNT, &SCREEN_WIDTH, &SCREEN_HEIGHT, lastSeconds);
         // Create this tick's boidChoord
         int** boidCoords = (int**)malloc(BOIDS_AMOUNT * sizeof(int*)); 
         for (int i = 0; i < BOIDS_AMOUNT; i++)
@@ -135,6 +121,7 @@ int main(int argc, char* argv[])
         // Draw the boids
         drawBoids(boidCoords, &BOIDS_AMOUNT, window, renderer);
         SDL_RenderPresent(renderer);
+        SDL_Delay(17);
     }
     // Exit programme since quit has been activated
     end(window, renderer);

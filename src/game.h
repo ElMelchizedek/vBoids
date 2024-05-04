@@ -9,12 +9,19 @@ typedef struct boid
 {
     int x;
     int y;
-    int* velocity;
     int speed;
+    int* velocity;
+    int* acceleration;
     int bubble; // The distance which a boid requires between itself and other boids to prevent overcrowding.
-    double view; // The boid's visible range, in degrees.
+    int view;
+    double angle; 
 } boid;
 
+typedef struct boids
+{
+    boid** boidArray;
+    int boidCount;
+} boids;
 
 // CUSTOM MACROS
 // Form macros
@@ -22,7 +29,7 @@ typedef struct boid
 
 // FUNCTIONS
 void simulate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
-void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
+void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight, int lastSeconds);
 void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
 
 

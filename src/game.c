@@ -18,13 +18,51 @@ int determineMagnitude(int x, int y)
     return sqrt(pow(x, 2) + pow(y, 2));
 }
 
-double determineAngleBetweenVectors(boid* selectBoid, double* pointVector, double* pointMagnitude)
+boids getBoidsInRange(boid** boidList, boid* currentBoid, const int* boidsAmount, int currentIndex, int range)
 {
-    double dotProduct = ((selectBoid->velocity[0] * pointVector[0]) + (selectBoid->velocity[1] * pointVector[1]));
-    double velocityMagnitude = determineMagnitude(selectBoid->velocity[0], selectBoid->velocity[1]);
-    double acosData = (double)(dotProduct / (velocityMagnitude * *pointMagnitude));
-    return acos(acosData);
+    boid** selectBoids = (boid**)malloc(*boidsAmount * sizeof(boid*));
+    int countSelectBoids = 0;
+    for (int i = 0; i < *boidsAmount; i++)
+    {
+        if (!(i == currentIndex))
+        {
+            boid* compareBoid = boidList[i];
+            int* vectorBetween = (int*)malloc(2 * sizeof(int));
+            vectorBetween[0] = (compareBoid->x - currentBoid->x);
+            vectorBetween[1] = (compareBoid->y - currentBoid->y);           
+            int magnitudeBetween = determineMagnitude(vectorBetween[0], vectorBetween[1]); 
+            if (magnitudeBetween <= range)
+            {
+                selectBoids[countSelectBoids] = compareBoid;
+                countSelectBoids++;
+            }
+        }
+    }
+    
+    boids returnBoids = {selectBoids, countSelectBoids};
+    return returnBoids;
 }
+
+int* getAveragePositionBoids(boids boidsGroup)
+{
+    int* aggregatePosition = (int*)malloc(2 * sizeof(int));
+    for (int i = 0; i < boidsGroup.boidCount; i++)
+    {
+        aggregatePosition[0] = (aggregatePosition[0] + boidsGroup.boidArray[i]->x);
+        aggregatePosition[1] = (aggregatePosition[1] + boidsGroup.boidArray[i]->y);
+    }
+    int* averagePosition = (int*)malloc(2 * sizeof(int));
+    for (int j = 0; j < 2; j++) { averagePosition[j] = (aggregatePosition[j] / boidsGroup.boidCount); }
+    return averagePosition;
+}
+
+// double determineAngleBetweenVectors(boid* selectBoid, double* pointVector, double* pointMagnitude)
+// {
+//     double dotProduct = ((selectBoid->velocity[0] * pointVector[0]) + (selectBoid->velocity[1] * pointVector[1]));
+//     double velocityMagnitude = determineMagnitude(selectBoid->velocity[0], selectBoid->velocity[1]);
+//     double acosData = (double)(dotProduct / (velocityMagnitude * *pointMagnitude));
+//     return acos(acosData);
+// }
 
 void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight)
 {
@@ -34,20 +72,32 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount
     int generateYLowerLimit = ((*screenHeight / 2) - (*screenHeight / 10));
     srand(time(0));
 
+    double setAngle = (((float)rand() / (float)RAND_MAX) * (2 * M_PI));
+
     for (int i = 0; i < *boidsAmount; i++) 
     {
         boid* newBoid = (boid*)malloc(sizeof(boid));
 
-        newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
-        newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
+        // newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
+        // newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
+
+        newBoid->x = (*screenWidth / 2);
+        newBoid->y = (*screenHeight / 2);
+
+        newBoid->speed = 5;
+
+        newBoid->angle = setAngle;
 
         newBoid->velocity = (int*)malloc(2 * sizeof(int));
-        newBoid->velocity[0] = 0;
-        newBoid->velocity[1] = 0;        
-        newBoid->speed = 3;
+        newBoid->velocity[0] = (int)round(newBoid->speed * cos(newBoid->angle));
+        newBoid->velocity[1] = (int)round(newBoid->speed * sin(newBoid->angle));
+        
+        newBoid->acceleration = (int*)malloc(2 * sizeof(int)); 
+        newBoid->acceleration[0] = 0;
+        newBoid->acceleration[1] = 0;
 
-        newBoid->bubble = determineMagnitude(10, 10);
-        newBoid->view = 90 * (M_PI / 180); 
+        newBoid->bubble = 5; 
+        newBoid->view = 25;
 
         boidList[*boidsCount] = newBoid;
         *boidsCount = *boidsCount + 1;
@@ -55,136 +105,94 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount
     return;
 }
 
-// Figures out what the angle to the averge position of the nearby boids within the selected boid's visual range is.
-double determineAngleNearbyBoids(boid* currentBoid, boid** boidList, const int* boidsAmount, int currentBoidIndex, const int* screenWidth,
-                                    const int* screenHeight)
+// Alignment
+// Get all of the boids the current boid can see; Find average directions of said boids; Nudge current boid to face that direction by a tenth of it.
+double alignment(boid** boidList, boid* currentBoid, const int* boidsAmount, int currentIndex)
 {
-    double angle = 0.0;
-    int* nearbyBoidCentreCoords = (int*)malloc(2 * sizeof(int));
-    nearbyBoidCentreCoords[0] = 0;
-    nearbyBoidCentreCoords[1] = 0;
+    boids groupNearbyBoids = getBoidsInRange(boidList, currentBoid, boidsAmount, currentIndex, currentBoid->view);
+    boid** nearbyBoids = groupNearbyBoids.boidArray;
+    int countNearbyBoids = groupNearbyBoids.boidCount;
+    if (countNearbyBoids == 0) { return 0.0; }
 
-    for (int i = 0; i < *boidsAmount; i++)
+    double aggregateAngle = 0.0;
+    for (int j = 0; j < countNearbyBoids; j++)
     {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidList");};
-        boid* compareBoid = boidList[i];
-        if (i != currentBoidIndex)
-        {
-            double newAngle = 0.0;
-            double pointVector[2] = {(compareBoid->x - currentBoid->x), (compareBoid->y - currentBoid->y)};
-            double dotProduct = ((currentBoid->velocity[0] * pointVector[0]) + (currentBoid->velocity[1] * pointVector[1]));
-            double velocityMagnitude = determineMagnitude(currentBoid->velocity[0], currentBoid->velocity[1]);
-            double pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
-            double acosData = (double)(dotProduct / (velocityMagnitude * pointMagnitude));
-            newAngle = acos(acosData);
-            if (angle <= (currentBoid->view / 2) && angle >= ((currentBoid->view / 2) * -1))
-            {
-                nearbyBoidCentreCoords[0] = ((nearbyBoidCentreCoords[0] + compareBoid->x) / 2);
-                nearbyBoidCentreCoords[1] = ((nearbyBoidCentreCoords[1] + compareBoid->y) / 2);
-                angle = ((angle + newAngle) / 2); 
-            }
-        }
+        aggregateAngle = (aggregateAngle + nearbyBoids[j]->angle);
     }
-    return angle; 
+    double averageAngle = (aggregateAngle / countNearbyBoids);
+
+    double differenceAngle = (averageAngle - currentBoid->angle);
+    return (differenceAngle / 10);
 }
 
-// Get angle opposite of average vector towards boids that are inside bubble range.
-double seperation(boid* selectBoid, boid** boidList, const int* boidsAmount, int selectBoidIndex)
+// Cohesion
+// Get all visible boids to current boid; Get average position of said boids; Get angle towards position from current boid;
+// Nudge current boid to face it slightly.
+double cohesion(boid** boidList, boid* currentBoid, const int* boidsAmount, int currentIndex)
 {
-    double deltaAngle = 0.0;
+    boids groupVisibleBoids = getBoidsInRange(boidList, currentBoid, boidsAmount, currentIndex, currentBoid->view);
+    int countVisibleBoids = groupVisibleBoids.boidCount;
 
-    for (int i = 0; i < *boidsAmount; i++)
-    {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidLists"); }
-        boid* compareBoid = boidList[i];
-        if (i != selectBoidIndex)
-        {
-            double additiveAngle = 0.0;
-            double pointVector[2] = {(compareBoid->x - selectBoid->x), (compareBoid->y - selectBoid->y)};
-            double pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
-            if (pointMagnitude < selectBoid->bubble) { 
-                double dotProduct = ((selectBoid->velocity[0] * pointVector[0]) + (selectBoid->velocity[1] * pointVector[1]));
-                double velocityMagnitude = determineMagnitude(selectBoid->velocity[0], selectBoid->velocity[1]);
-                double acosData = (double)(dotProduct / (velocityMagnitude * pointMagnitude));
-                return acos(acosData);
-            }
-            deltaAngle = (deltaAngle + additiveAngle);
-        }
-    }
-    // Get the angle on the opposite side of the unit circle, since we're trying to get selectBoid to avoid the boids intruding on its personal space.
-    if (0 < deltaAngle && deltaAngle < M_PI) { deltaAngle = (deltaAngle + M_PI); }
-    else if ((M_PI * -1) < deltaAngle && deltaAngle < 0){ deltaAngle = (deltaAngle - M_PI); }
-    return deltaAngle;
+    if (countVisibleBoids == 0) { return 0.0; }
+
+    int* averagePosition = getAveragePositionBoids(groupVisibleBoids);
+
+    int averageVector[2] = {(averagePosition[0] - currentBoid->x), (averagePosition[1] - currentBoid->y)};
+    double angleBetween = atan2(averageVector[1], averageVector[0]);
+
+    double differenceAngle = (angleBetween - currentBoid->angle);
+    return(differenceAngle / 10);
+
 }
 
-// Get angle between the velocity of the selectBoid and the average velocity of the boids within its visual range.
-double alignment(boid* selectBoid, boid** boidList, const int* boidsAmount, int selectBoidIndex)
+// Seperation
+// Get all boids within bubble; Get average position of said boids; Get angle towards position from current boid;
+// Nudge current boid away from it slightly.
+double seperation(boid** boidList, boid* currentBoid, const int* boidsAmount, int currentIndex)
 {
-    double deltaAngle = 0.0;
+    boids invasiveBoids = getBoidsInRange(boidList, currentBoid, boidsAmount, currentIndex, currentBoid->bubble);
 
-    for (int i =0; i < *boidsAmount; i++)
-    {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidLists"); }
-        boid* compareBoid = boidList[i];
-        if (i != selectBoidIndex)
-        {
-            double additiveAngle = 0.0;
-            double pointVector[2] = {(compareBoid->velocity[0] - selectBoid->velocity[0]), (compareBoid->velocity[1] - selectBoid->velocity[1])};
-            double pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
-            if (pointMagnitude < selectBoid->view) { additiveAngle = determineAngleBetweenVectors(selectBoid, &pointVector, &pointMagnitude); }
-            deltaAngle = (deltaAngle + additiveAngle);
-        }
-    }
-    return deltaAngle;
-}
+    if (invasiveBoids.boidCount == 0) { return 0.0; }
 
-// Get angle towards the average position of nearby boids.
-double cohesion(boid* selectBoid, boid** boidList, const int* boidsAmount, int selectBoidIndex)
-{
-    double deltaAngle = 0.0;
+    int* averagePosition = getAveragePositionBoids(invasiveBoids);
 
-    for (int i =0; i < *boidsAmount; i++)
-    {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidLists"); }
-        boid* compareBoid = boidList[i];
-        if (i != selectBoidIndex)
-        {
-            double additiveAngle = 0.0;
-            double pointVector[2] = {(compareBoid->x - selectBoid->x), (compareBoid->y - selectBoid->y)};
-            double pointMagnitude = determineMagnitude(pointVector[0], pointVector[1]);
-            if (pointMagnitude < selectBoid->view) { additiveAngle = determineAngleBetweenVectors(selectBoid, &pointVector, &pointMagnitude); }
-            deltaAngle = (deltaAngle + additiveAngle);
-        }
-    }
-    return deltaAngle;
+    int averageVector[2] = {(averagePosition[0] - currentBoid->x), (averagePosition[1] - currentBoid->y)};
+    double angleBetween = atan2(averageVector[1], averageVector[0]);
+
+    double differenceAngle = (angleBetween - currentBoid->angle);
+    double fractionDifferenceAngle = (differenceAngle / 10);
+    return(-fractionDifferenceAngle);
 }
 
 // Does calculations based on previous tick (or at beginning, based on initialisation).
-void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight)
+void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight, int lastSeconds)
 { 
     for (int i = 0; i < *boidsAmount; i++)
     {
         if (boidList[i] == NULL) { errorHandle(E_NULL, "boidList"); };
-        int currentBoidIndex = i;
-        double dAngleList[3] = {0, 0, 0};
-        dAngleList[0] = seperation(boidList[i], boidList, boidsAmount, i);
-        dAngleList[1] = alignment(boidList[i], boidList, boidsAmount, i);
+
+        // secondsIncrease: The new, increased amount of seconds since SDL init
+        // newseconds: How many seconds have passed since last time we checked.
+        // deltaseconds: The difference in seconds between when we last checked, and the amount that has passed since we last checked.
+        // int secondsIncrease = (int)round((float)SDL_GetTicks() / 1000);
+        // int newSeconds = (secondsIncrease - lastSeconds);
+
+        // Update velocity with incrementation of the current boid's angle with 
+        // the angles returned by alignment, cohesion, and seperation.
+        boidList[i]->angle += alignment(boidList, boidList[i], boidsAmount, i);
+        boidList[i]->angle += cohesion(boidList, boidList[i], boidsAmount, i);
+        boidList[i]->angle += seperation(boidList, boidList[i], boidsAmount, i);
+        boidList[i]->velocity[0] = (int)round(boidList[i]->speed * cos(boidList[i]->angle));
+        boidList[i]->velocity[1] = (int)round(boidList[i]->speed * sin(boidList[i]->angle));
+
+        // Alter the position of the boid based on velocity. If reach eastern or southern edge of screen, wrap the coords around back to 0.
+        boidList[i]->x = (boidList[i]->x + boidList[i]->velocity[0]) % *screenWidth;
+        boidList[i]->y = (boidList[i]->y + boidList[i]->velocity[1]) % *screenHeight;
+
+        // Same wrapping but for western and northen edges of the screen. 
+        if (boidList[i]->x < 0) { boidList[i]->x += *screenWidth; }
+        if (boidList[i]->y < 0) { boidList[i]->y += *screenHeight; }
 
     }
     return;
-}
-
-// Using the data updated via calculate(), simulate the environment for one tick based on the specified rules.
-void simulate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight)
-{
-    for (int i = 0; i < *boidsAmount; i++)
-    {
-        if (boidList[i] == NULL) { errorHandle(E_NULL, "boidList"); };
-        boid* currentBoid = boidList[i];
-        int newX = (currentBoid->x + currentBoid->velocity[0]);
-        int newY = (currentBoid->y + currentBoid->velocity[1]);
-
-        if (newX <= (*screenWidth - (*screenWidth / 10)) || newX >= (*screenWidth + (*screenWidth / 10))) { currentBoid->x = (newX); }
-        if (newY <= (*screenHeight - (*screenHeight / 10)) || newY >= (*screenWidth +(*screenWidth / 10))) { currentBoid->y = (newY); }
-    }
 }
