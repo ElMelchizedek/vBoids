@@ -13,7 +13,7 @@
 // Constants
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
-const int BOIDS_AMOUNT = 100;
+const int BOIDS_AMOUNT = 300;
 const int FPS = 120;
 
 // Quit, exit programme
@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
     // Other basic variables
     bool quit = false;
     int lastTicks = SDL_GetTicks();
+    params setParams = {5, 30, 10};
 
     // Initialise graphics
     if (graphicsInit(&window, &renderer, &SCREEN_WIDTH, &SCREEN_HEIGHT))
@@ -73,7 +74,7 @@ int main(int argc, char* argv[])
     }
 
     int boidsCount = 0;
-    initialiseBoidList(boidList, &BOIDS_AMOUNT, &boidsCount, &SCREEN_WIDTH, &SCREEN_HEIGHT);
+    initialiseBoidList(boidList, &BOIDS_AMOUNT, &boidsCount, &SCREEN_WIDTH, &SCREEN_HEIGHT, &setParams);
     saveAddress(&addressList, &addressListCount, (void*)boidList);
 
     // Variables required for simulation, that will be passed to functions in game.c/graphics.c
@@ -95,6 +96,8 @@ int main(int argc, char* argv[])
                     free(addressList[i]);
                 }
                 quit = true;
+            } else if (e.type == SDL_KEYDOWN) {
+                changeParams(boidList, &BOIDS_AMOUNT, e.key.keysym.sym, &setParams);
             }
         }
         // FPS Cap

@@ -56,15 +56,7 @@ int* getAveragePositionBoids(boids boidsGroup)
     return averagePosition;
 }
 
-// double determineAngleBetweenVectors(boid* selectBoid, double* pointVector, double* pointMagnitude)
-// {
-//     double dotProduct = ((selectBoid->velocity[0] * pointVector[0]) + (selectBoid->velocity[1] * pointVector[1]));
-//     double velocityMagnitude = determineMagnitude(selectBoid->velocity[0], selectBoid->velocity[1]);
-//     double acosData = (double)(dotProduct / (velocityMagnitude * *pointMagnitude));
-//     return acos(acosData);
-// }
-
-void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight)
+void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight, params* setParams)
 {
     int generateXUpperLimit = ((*screenWidth / 2) + (*screenWidth / 10));
     int generateYUpperLimit = ((*screenHeight / 2) + (*screenHeight / 10));
@@ -78,13 +70,13 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount
     {
         boid* newBoid = (boid*)malloc(sizeof(boid));
 
-        // newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
-        // newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
+        newBoid->x = (rand() % (generateXUpperLimit - generateXLowerLimit + 1) + generateXLowerLimit);
+        newBoid->y = (rand() % (generateYUpperLimit - generateYLowerLimit + 1) + generateYLowerLimit);
 
-        newBoid->x = (*screenWidth / 2);
-        newBoid->y = (*screenHeight / 2);
+        // newBoid->x = (*screenWidth / 2);
+        // newBoid->y = (*screenHeight / 2);
 
-        newBoid->speed = 5;
+        newBoid->speed = setParams->speed;
 
         newBoid->angle = setAngle;
 
@@ -96,8 +88,8 @@ void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount
         newBoid->acceleration[0] = 0;
         newBoid->acceleration[1] = 0;
 
-        newBoid->bubble = 5; 
-        newBoid->view = 25;
+        newBoid->bubble = setParams->bubble; 
+        newBoid->view = setParams->view;
 
         boidList[*boidsCount] = newBoid;
         *boidsCount = *boidsCount + 1;
@@ -194,5 +186,43 @@ void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, 
         if (boidList[i]->y < 0) { boidList[i]->y += *screenHeight; }
 
     }
+    return;
+}
+
+void changeParams(boid** boidList, const int* boidsAmount, int keyChoice, params* selectParams)
+{
+    switch(keyChoice)
+    {
+        case SDLK_q:
+            selectParams->speed++;
+            break;
+        case SDLK_w:
+            selectParams->view++;
+            break;
+        case SDLK_e:
+            selectParams->bubble++;
+            break;
+        case SDLK_a:
+            selectParams->speed--;
+            break;
+        case SDLK_s:
+            selectParams->view--;
+            break;
+        case SDLK_d:
+            selectParams->bubble--;
+            break;
+        default:
+            break;
+    }
+    for (int i = 0; i < *boidsAmount; i++)
+    {
+        boidList[i]->speed = selectParams->speed;
+        boidList[i]->view = selectParams->view;
+        boidList[i]->bubble = selectParams->bubble;
+    }
+    printf("NEW PARAMETERS\n");
+    printf("SPEED: %d\n", selectParams->speed);
+    printf("VIEW: %d\n", selectParams->view);
+    printf("BUBBLE: %d\n", selectParams->bubble);
     return;
 }

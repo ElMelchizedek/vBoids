@@ -23,6 +23,13 @@ typedef struct boids
     int boidCount;
 } boids;
 
+typedef struct params
+{
+    int speed;
+    int view;
+    int bubble;
+} params;
+
 // CUSTOM MACROS
 // Form macros
 #define F_NULL 0
@@ -30,8 +37,8 @@ typedef struct boids
 // FUNCTIONS
 void simulate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight);
 void calculate(boid** boidList, const int* boidsAmount, const int* screenWidth, const int* screenHeight, int lastSeconds);
-void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight);
-
+void initialiseBoidList(boid** boidList, const int* boidsAmount, int* boidsCount, const int* screenWidth, const int* screenHeight, params* setParams);
+void changeParams(boid** boidList, const int* boidsAmount, int keyChoice, params* selectParams);
 
 #endif 
 // game.h
