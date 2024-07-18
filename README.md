@@ -1,4 +1,4 @@
-# verlBoids
+# vBoids
 ### Controls
 
 Q - Increase speed
